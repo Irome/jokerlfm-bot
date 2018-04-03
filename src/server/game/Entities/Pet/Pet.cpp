@@ -609,6 +609,9 @@ bool Pet::CreateBaseAtCreature(Creature* creature)
     else
         SetName(creature->GetNameForLocaleIdx(sObjectMgr->GetDBCLocaleIndex()));
 
+    // EJ pet will keep its original name 
+    SetName(cinfo->Name);
+
     return true;
 }
 
@@ -619,6 +622,9 @@ bool Pet::CreateBaseAtCreatureInfo(CreatureTemplate const* cinfo, Unit* owner)
 
     if (CreatureFamilyEntry const* cFamily = sCreatureFamilyStore.LookupEntry(cinfo->family))
         SetName(cFamily->Name[sWorld->GetDefaultDbcLocale()]);
+
+    // EJ pet will keep its original name 
+    SetName(cinfo->Name);
 
     Relocate(owner->GetPositionX(), owner->GetPositionY(), owner->GetPositionZ(), owner->GetOrientation());
 
@@ -701,6 +707,14 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
     SetAttackTime(OFF_ATTACK, attackTime);
     SetAttackTime(RANGED_ATTACK, BASE_ATTACK_TIME);
 
+    // EJ hunter's pet will keep its original attack time 
+    if (petType == HUNTER_PET)
+    {
+        SetAttackTime(BASE_ATTACK, cinfo->baseattacktime);
+        SetAttackTime(OFF_ATTACK, cinfo->baseattacktime);
+        SetAttackTime(RANGED_ATTACK, cinfo->rangeattacktime);
+    }
+
     SetFloatValue(UNIT_MOD_CAST_SPEED, 1.0f);
 
     //scale
@@ -770,6 +784,14 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
             SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, float(petlevel - (petlevel / 4)));
             SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, float(petlevel + (petlevel / 4)));
             SetUInt32Value(UNIT_FIELD_PETNEXTLEVELEXP, uint32(sObjectMgr->GetXPForLevel(petlevel)*PET_XP_FACTOR));
+
+            // EJ hunter's pet will keep the same dps when attack time is not 2000 
+            float baseMinDamage = float(petlevel - (petlevel / 4));
+            float baseMaxDamage = float(petlevel + (petlevel / 4));
+            baseMinDamage = baseMinDamage * GetAttackTime(BASE_ATTACK) / BASE_ATTACK_TIME;
+            baseMaxDamage = baseMaxDamage * GetAttackTime(BASE_ATTACK) / BASE_ATTACK_TIME;
+            SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, baseMinDamage);
+            SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, baseMaxDamage);
             break;
         }
         case SUMMON_PET:
